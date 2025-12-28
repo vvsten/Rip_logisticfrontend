@@ -6,7 +6,7 @@ import path from 'path'
 // https://vitejs.dev/config/
 export default defineConfig({
   // Для GitHub Pages используем VITE_BASE_URL или имя репозитория
-  base: process.env.VITE_BASE_URL || (process.env.NODE_ENV === 'production' ? '/RIP-2-mod-/' : '/'),
+  base: process.env.VITE_BASE_URL || (process.env.NODE_ENV === 'production' ? '/Rip_logisticfrontend/' : '/'),
   plugins: [
     react(),
     VitePWA({
@@ -20,8 +20,8 @@ export default defineConfig({
         background_color: '#f8f9fa',
         display: 'standalone',
         orientation: 'portrait',
-        scope: process.env.VITE_BASE_URL || (process.env.NODE_ENV === 'production' ? '/RIP-2-mod-/' : '/'),
-        start_url: process.env.VITE_BASE_URL || (process.env.NODE_ENV === 'production' ? '/RIP-2-mod-/' : '/'),
+        scope: process.env.VITE_BASE_URL || (process.env.NODE_ENV === 'production' ? '/Rip_logisticfrontend/' : '/'),
+        start_url: process.env.VITE_BASE_URL || (process.env.NODE_ENV === 'production' ? '/Rip_logisticfrontend/' : '/'),
         icons: [
           {
             src: 'pwa-192x192.png',
@@ -72,6 +72,23 @@ export default defineConfig({
         target: 'http://localhost:8083',
         changeOrigin: true,
         ws: true,
+        // НЕ перехватываем GET запросы к /api/v1/transport-services для навигации React Router
+        // Перехватываем только реальные API запросы (POST, PUT, DELETE, или GET с query параметрами)
+        // Различаем навигационные запросы (от браузера) и API запросы (от fetch/xhr)
+        bypass: (req) => {
+          const url = req.url || '';
+          const isNavigationRequest = req.headers.accept?.includes('text/html');
+          
+          // Если это навигационный GET запрос (браузер переходит на страницу) - пропускаем для React Router
+          if (isNavigationRequest && req.method === 'GET') {
+            if (url.match(/^\/api\/v1\/transport-services\/?$/) || url.match(/^\/api\/v1\/transport-services\/\d+$/)) {
+              return false; // Пропускаем прокси, чтобы React Router обработал маршрут
+            }
+          }
+          
+          // Все остальные запросы к /api (включая API запросы от fetch/xhr) проксируем на бэкенд
+          return undefined;
+        },
       },
       // Lab8: прокси на второй (async) сервис
       '/async': {
