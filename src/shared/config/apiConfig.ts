@@ -18,6 +18,12 @@ const isTauri = typeof window !== 'undefined' && (
 // IP адрес сервера для Tauri (можно изменить через переменную окружения или конфиг)
 // По умолчанию используется localhost, но в Tauri нужно указать IP локальной сети
 const getServerIP = (): string => {
+  // Проверяем переменную окружения для production (GitHub Pages)
+  const envApiUrl = import.meta.env.VITE_API_BASE_URL;
+  if (envApiUrl) {
+    return envApiUrl;
+  }
+
   // В Tauri приложении можно использовать переменную окружения или конфиг
   if (isTauri) {
     // Для Tauri используем IP из localStorage или переменной окружения
@@ -39,7 +45,9 @@ const getServerIP = (): string => {
     console.log(`[Config] Auto-set default IP: ${defaultIP}`);
     return defaultIP;
   }
-  // Для веб-версии используем относительные пути
+  
+  // Для веб-версии используем относительные пути (работает через прокси в dev)
+  // В production на GitHub Pages нужно указать VITE_API_BASE_URL
   return '';
 };
 
@@ -75,10 +83,10 @@ export const getApiUrl = (path: string): string => {
  */
 export const getAsyncUrl = (path: string): string => {
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;
-  if (isTauri && API_BASE_URL) {
+  if (API_BASE_URL) {
     // Меняем порт на 8090 (если порт в конце указан)
-    const tauriAsyncBase = API_BASE_URL.replace(/:\d+$/, ':8090');
-    return `${tauriAsyncBase}${normalizedPath}`;
+    const asyncBase = API_BASE_URL.replace(/:\d+$/, ':8090');
+    return `${asyncBase}${normalizedPath}`;
   }
   return `/async${normalizedPath}`;
 };
